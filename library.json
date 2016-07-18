@@ -1,0 +1,17 @@
+{
+  "name": "BME280",
+  "keywords": "humidity, pressure, temperature, sensor, i2cdevlib, i2c",
+  "description": "The BME280 is as combined digital humidity, pressure and temperature sensor.",
+  "include": "Arduino/BME280",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/henrik1235/BME280.git"
+  },
+  "dependencies":
+  {
+    "name": "I2Cdevlib-Core",
+    "frameworks": "arduino"
+  },
+  "frameworks": "arduino"
+}

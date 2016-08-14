@@ -90,7 +90,7 @@ private:
 	uint8_t  dig_H3;
 	int16_t  dig_H4;
 	int16_t  dig_H5;
-	int8_t  dig_H6;
+	int8_t   dig_H6;
 
 	BME280_S32_t t_fine;
 
@@ -107,33 +107,33 @@ public:
 
 	uint8_t getDeviceID();
 	bool checkConnection();
-	void reset();
+	bool reset();
 
 	uint16_t readInt16(int offset);
 	uint32_t readInt32(int offset);
 
 	uint8_t getTempOversampling();
-	void setTempOversampling(uint8_t mode);
+	bool setTempOversampling(uint8_t mode);
 
 	uint8_t getPressOversampling();
-	void setPressOversampling(uint8_t mode);
+	bool setPressOversampling(uint8_t mode);
 
 	uint8_t getHumOversampling();
-	void setHumOversampling(uint8_t mode);
+	bool setHumOversampling(uint8_t mode);
 
 	uint8_t getMode();
-	void setMode(uint8_t mode);
+	bool setMode(uint8_t mode);
 
 	uint8_t getStandbyTime();
-	void setStandbyTime(uint8_t time);
+	bool setStandbyTime(uint8_t time);
 
 	uint8_t getFilterCoefficient();
-	void setFilterCoefficient(uint8_t coefficient);
+	bool setFilterCoefficient(uint8_t coefficient);
 
-	void loadCalibrationData();
+	bool loadCalibrationData();
 
 	// temp in °C, press in hPa, hum in %RH
-	void getValues(float* temp, float* press, float* hum);
+	bool getValues(float* temp, float* press, float* hum);
 };
 
 #endif

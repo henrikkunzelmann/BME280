@@ -12,13 +12,16 @@ bool BME280::init() {
 	if (!checkConnection())
 		return false;
 
-	setPressOversampling(BME280_OVERSAMPLING_1);
-	setTempOversampling(BME280_OVERSAMPLING_1);
-	setHumOversampling(BME280_OVERSAMPLING_1);
-	setMode(BME280_MODE_NORMAL);
+	if (!setPressOversampling(BME280_OVERSAMPLING_1))
+		return false;
+	if (!setTempOversampling(BME280_OVERSAMPLING_1))
+		return false;
+	if (!setHumOversampling(BME280_OVERSAMPLING_1))
+		return false;
+	if (!setMode(BME280_MODE_NORMAL))
+		return false;
 
-	loadCalibrationData();
-	return true;
+	return loadCalibrationData();
 }
 
 uint8_t BME280::getDeviceID() {
@@ -30,8 +33,8 @@ bool BME280::checkConnection() {
 	return getDeviceID() == 0x60;
 }
 
-void BME280::reset() {
-	I2Cdev::writeByte(addr, BME280_RA_RESET, 0xB6);
+bool BME280::reset() {
+	return I2Cdev::writeByte(addr, BME280_RA_RESET, 0xB6);
 }
 
 uint16_t BME280::readInt16(int offset) {
@@ -52,8 +55,8 @@ uint8_t BME280::getTempOversampling() {
 	return buffer[0];
 }
 
-void BME280::setTempOversampling(uint8_t mode) {
-	I2Cdev::writeBits(addr, BME280_RA_CTRL_MEAS, 7, 3, mode);
+bool BME280::setTempOversampling(uint8_t mode) {
+	return I2Cdev::writeBits(addr, BME280_RA_CTRL_MEAS, 7, 3, mode);
 }
 
 uint8_t BME280::getPressOversampling() {
@@ -61,8 +64,8 @@ uint8_t BME280::getPressOversampling() {
 	return buffer[0];
 }
 
-void BME280::setPressOversampling(uint8_t mode) {
-	I2Cdev::writeBits(addr, BME280_RA_CTRL_MEAS, 4, 3, mode);
+bool BME280::setPressOversampling(uint8_t mode) {
+	return I2Cdev::writeBits(addr, BME280_RA_CTRL_MEAS, 4, 3, mode);
 }
 
 uint8_t BME280::getHumOversampling() {
@@ -70,12 +73,14 @@ uint8_t BME280::getHumOversampling() {
 	return buffer[0];
 }
 
-void BME280::setHumOversampling(uint8_t mode) {
-	I2Cdev::writeBits(addr, BME280_RA_CTRL_HUM, 2, 3, mode);
+bool BME280::setHumOversampling(uint8_t mode) {
+	if (!I2Cdev::writeBits(addr, BME280_RA_CTRL_HUM, 2, 3, mode))
+		return false;
 
 	// Changes to this register only become effective after a write operation to “ctrl_meas”.
-	I2Cdev::readByte(addr, BME280_RA_CTRL_MEAS, buffer);
-	I2Cdev::writeByte(addr, BME280_RA_CTRL_MEAS, buffer[0]);
+	if (!I2Cdev::readByte(addr, BME280_RA_CTRL_MEAS, buffer))
+		return false;
+	return I2Cdev::writeByte(addr, BME280_RA_CTRL_MEAS, buffer[0]);
 }
 
 uint8_t BME280::getMode() {
@@ -83,8 +88,8 @@ uint8_t BME280::getMode() {
 	return buffer[0];
 }
 
-void BME280::setMode(uint8_t mode) {
-	I2Cdev::writeBits(addr, BME280_RA_CTRL_MEAS, 1, 2, mode);
+bool BME280::setMode(uint8_t mode) {
+	return I2Cdev::writeBits(addr, BME280_RA_CTRL_MEAS, 1, 2, mode);
 }
 
 uint8_t BME280::getStandbyTime() {
@@ -92,8 +97,8 @@ uint8_t BME280::getStandbyTime() {
 	return buffer[0];
 }
 
-void BME280::setStandbyTime(uint8_t time) {
-	I2Cdev::writeBits(addr, BME280_RA_CONFIG, 7, 3, time);
+bool BME280::setStandbyTime(uint8_t time) {
+	return I2Cdev::writeBits(addr, BME280_RA_CONFIG, 7, 3, time);
 }
 
 uint8_t BME280::getFilterCoefficient() {
@@ -101,12 +106,14 @@ uint8_t BME280::getFilterCoefficient() {
 	return buffer[0];
 }
 
-void BME280::setFilterCoefficient(uint8_t coefficient) {
-	I2Cdev::writeBits(addr, BME280_RA_CONFIG, 4, 3, coefficient);
+bool BME280::setFilterCoefficient(uint8_t coefficient) {
+	return I2Cdev::writeBits(addr, BME280_RA_CONFIG, 4, 3, coefficient);
 }
 
-void BME280::loadCalibrationData() {
-	I2Cdev::readBytes(addr, BME280_RA_CALIB00, 26, buffer);
+bool BME280::loadCalibrationData() {
+	if (!I2Cdev::readBytes(addr, BME280_RA_CALIB00, 26, buffer))
+		return false;
+
 	dig_T1 = readInt16(0);
 	dig_T2 = readInt16(2);
 	dig_T3 = readInt16(4);
@@ -121,16 +128,20 @@ void BME280::loadCalibrationData() {
 	dig_P9 = readInt16(22);
 	dig_H1 = buffer[25];
 
-	I2Cdev::readBytes(addr, BME280_RA_CALIB26, 7, buffer);
+	if (!I2Cdev::readBytes(addr, BME280_RA_CALIB26, 7, buffer))
+		return false;
+
 	dig_H2 = readInt16(0);
 	dig_H3 = buffer[2];
 	dig_H4 = ((uint16_t)buffer[3] << 4) | (buffer[4] & 0b00001111);
 	dig_H5 = ((uint16_t)buffer[5] << 4) | (buffer[4] >> 4);
 	dig_H6 = buffer[6];
+	return true;
 }
 
-void BME280::getValues(float* temp, float* press, float* hum) {
-	I2Cdev::readBytes(addr, BME280_RA_PRESS_MSB, 8, buffer);
+bool BME280::getValues(float* temp, float* press, float* hum) {
+	if (!I2Cdev::readBytes(addr, BME280_RA_PRESS_MSB, 8, buffer))
+		return false;
 
 	int32_t adcPress = 0;
 	int32_t adcTemp = 0;
@@ -151,6 +162,7 @@ void BME280::getValues(float* temp, float* press, float* hum) {
 	*temp = compensate_T_int32(adcTemp) * 0.01f;
 	*press = compensate_P_int64(adcPress) / (256.0f * 100);
 	*hum = compensate_H_int32(adcHum) / 1024.0f;
+	return true;
 }
 
 // BME Data sheet code

@@ -1,6 +1,6 @@
 // BME280 I2C device class
-// Based on "MBME280: Final data sheet" Revision 1.1, 05/07/2015 (BST-BME280-DS001-10)
-// 2016 Henrik Kunzelmann
+// Based on "BME280: Final data sheet" Revision 1.2 (October 26th, 2015) [BST-BME280-DS001-11]
+// 2016-2017 Henrik Kunzelmann
 
 // May be used with BMP280 sensor, see data sheet for changes
 

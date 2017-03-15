@@ -70,6 +70,8 @@ private:
 	uint8_t addr;
 	uint8_t buffer[26];
 
+	bool useHighAccuracy;
+
 	// BME code
 	uint16_t dig_T1;
 	int16_t  dig_T2;
@@ -99,11 +101,22 @@ private:
 	BME280_U32_t compensate_P_int64(BME280_S32_t adc_P);
 	BME280_U32_t compensate_H_int32(BME280_S32_t adc_H);
 
+	// More accuracy with double
+	double compensate_T_double(BME280_S32_t adc_T);
+	double compensate_P_double(BME280_S32_t adc_P);
+	double compensate_H_double(BME280_S32_t adc_H);
+
 public:
 	explicit BME280();
 	explicit BME280(uint8_t addr);
 
 	bool init();
+
+	// Returns true, when the high accuracy mode is activated. The high accuracy mode is computational more intensive.
+	bool getHighAccuracy();
+
+	// Enables or disables the high accuracy mode. The high accuracy mode is computational more intensive.
+	void setHighAccuracy(bool enabled);
 
 	uint8_t getDeviceID();
 	bool checkConnection();

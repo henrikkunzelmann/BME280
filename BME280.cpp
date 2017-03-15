@@ -2,10 +2,12 @@
 
 BME280::BME280() {
 	this->addr = BME280_ADDR_SDO_LOW;
+	this->useHighAccuracy = false;
 }
 
 BME280::BME280(uint8_t addr) {
 	this->addr = addr;
+	this->useHighAccuracy = false;
 }
 
 bool BME280::init() {
@@ -22,6 +24,14 @@ bool BME280::init() {
 		return false;
 
 	return loadCalibrationData();
+}
+
+bool BME280::getHighAccuracy() {
+	return useHighAccuracy;
+}
+
+void BME280::setHighAccuracy(bool enabled) {
+	useHighAccuracy = enabled;
 }
 
 uint8_t BME280::getDeviceID() {
@@ -159,9 +169,16 @@ bool BME280::getValues(float* temp, float* press, float* hum) {
 	adcHum |= buffer[7];
 
 
-	*temp = compensate_T_int32(adcTemp) * 0.01f;
-	*press = compensate_P_int64(adcPress) / (256.0f * 100);
-	*hum = compensate_H_int32(adcHum) / 1024.0f;
+	if (useHighAccuracy) {
+		*temp = (float)compensate_T_double(adcTemp);
+		*press = (float)compensate_P_double(adcPress) / 100.0F;
+		*hum = (float)compensate_H_double(adcHum);
+	}
+	else {
+		*temp = compensate_T_int32(adcTemp) * 0.01f;
+		*press = compensate_P_int64(adcPress) / (256.0f * 100);
+		*hum = compensate_H_int32(adcHum) / 1024.0f;
+	}
 	return true;
 }
 
@@ -217,4 +234,54 @@ BME280_U32_t BME280::compensate_H_int32(BME280_S32_t adc_H)
 	v_x1_u32r = (v_x1_u32r < 0 ? 0 : v_x1_u32r);
 	v_x1_u32r = (v_x1_u32r > 419430400 ? 419430400 : v_x1_u32r);
 	return (BME280_U32_t)(v_x1_u32r >> 12);
+}
+
+// Returns temperature in DegC, double precision. Output value of “51.23” equals 51.23 DegC.
+double BME280::compensate_T_double(BME280_S32_t adc_T)
+{
+	double var1, var2, T;
+	var1 = (((double)adc_T)/16384.0 - ((double)dig_T1)/1024.0) * ((double)dig_T2);
+	var2 = ((((double)adc_T)/131072.0 - ((double)dig_T1)/8192.0) *
+		(((double)adc_T)/131072.0 - ((double) dig_T1)/8192.0)) * ((double)dig_T3);
+	t_fine = (BME280_S32_t)(var1 + var2);
+	T = (var1 + var2) / 5120.0;
+	return T;
+}
+
+// Returns pressure in Pa as double. Output value of “96386.2” equals 96386.2 Pa = 963.862 hPa
+double BME280::compensate_P_double(BME280_S32_t adc_P)
+{
+	double var1, var2, p;
+	var1 = ((double)t_fine/2.0) - 64000.0;
+	var2 = var1 * var1 * ((double)dig_P6) / 32768.0;
+	var2 = var2 + var1 * ((double)dig_P5) * 2.0;
+	var2 = (var2/4.0)+(((double)dig_P4) * 65536.0);
+	var1 = (((double)dig_P3) * var1 * var1 / 524288.0 + ((double)dig_P2) * var1) / 524288.0;
+	var1 = (1.0 + var1 / 32768.0)*((double)dig_P1);
+	if (var1 == 0.0)
+	{
+		return 0; // avoid exception caused by division by zero
+	}
+	p = 1048576.0 - (double)adc_P;
+	p = (p - (var2 / 4096.0)) * 6250.0 / var1;
+	var1 = ((double)dig_P9) * p * p / 2147483648.0;
+	var2 = p * ((double)dig_P8) / 32768.0;
+	p = p + (var1 + var2 + ((double)dig_P7)) / 16.0;
+	return p;
+}
+
+// Returns humidity in %rH as as double. Output value of “46.332” represents 46.332 %rH
+double BME280::compensate_H_double(BME280_S32_t adc_H)
+{
+	double var_H;
+	var_H = (((double)t_fine) - 76800.0);
+	var_H = (adc_H - (((double)dig_H4) * 64.0 + ((double)dig_H5) / 16384.0 * var_H)) *
+		(((double)dig_H2) / 65536.0 * (1.0 + ((double)dig_H6) / 67108864.0 * var_H *
+		(1.0 + ((double)dig_H3) / 67108864.0 * var_H)));
+		var_H = var_H * (1.0 - ((double)dig_H1) * var_H / 524288.0);
+	if (var_H > 100.0)
+		var_H = 100.0;
+	else if (var_H < 0.0)
+		var_H = 0.0;
+	return var_H;
 }

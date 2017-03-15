@@ -7,8 +7,8 @@
 #ifndef _BME280_h
 #define _BME280_h
 
-#include "arduino.h"
-#include "I2Cdev.h"
+#include <Arduino.h>
+#include <I2Cdev.h>
 
 #define BME280_ADDR_SDO_LOW 		  0x76
 #define BME280_ADDR_SDO_HIGH 		  0x77

@@ -102,6 +102,11 @@ bool BME280::setMode(uint8_t mode) {
 	return I2Cdev::writeBits(addr, BME280_RA_CTRL_MEAS, 1, 2, mode);
 }
 
+bool BME280::isMeasuring() {
+	I2Cdev::readBits(addr, BME280_RA_STATUS, 3, 1, buffer);
+	return buffer[0] != 0;
+}
+
 uint8_t BME280::getStandbyTime() {
 	I2Cdev::readBits(addr, BME280_RA_CONFIG, 7, 3, buffer);
 	return buffer[0];

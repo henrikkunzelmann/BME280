@@ -137,6 +137,8 @@ public:
 	uint8_t getMode();
 	bool setMode(uint8_t mode);
 
+	bool isMeasuring();
+
 	uint8_t getStandbyTime();
 	bool setStandbyTime(uint8_t time);
 
